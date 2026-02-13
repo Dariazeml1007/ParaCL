@@ -115,5 +115,7 @@ public:
 
 class Interpreter
 {
-    
+public:
+    ScopeStack scope_stack;
+    EvaluationStack eval_stack;
 };
