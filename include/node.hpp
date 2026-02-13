@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+// FIXME косяк с тем что тут не всегда виден interpreter
+
 namespace language
 {
 

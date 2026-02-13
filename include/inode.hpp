@@ -1,10 +1,9 @@
 #ifndef INODE_HPP
 #define INODE_HPP
 
-#include"interpritator.hpp"
-
 namespace language
 {
+class Interpreter;
 
 class INode
 {

@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "node.hpp"
+#include "interpritator.hpp"
 
 void language::Number::evaluate(Interpreter& interp)
 {
@@ -30,37 +31,41 @@ void language::BinaryOp::evaluate(Interpreter& interp)
     int right_val = interp.eval_stack.PopValue();
     int left_val = interp.eval_stack.PopValue();
 
+    int res = 0;
+
     switch (op_)
     {
     case Op::OR:
-        interp.eval_stack.PushValue((left_val != 0) || (right_val != 0) ? 1 : 0); break;
+        res = (left_val != 0) || (right_val != 0) ? 1 : 0; break;
     case Op::AND:
-        interp.eval_stack.PushValue((left_val != 0) && (right_val != 0) ? 1 : 0); break;
+        res = (left_val != 0) && (right_val != 0) ? 1 : 0; break;
     case Op::EQ:
-        interp.eval_stack.PushValue((left_val == right_val) ? 1 : 0); break;
+        res = (left_val == right_val) ? 1 : 0; break;
     case Op::NE:
-        interp.eval_stack.PushValue((left_val != right_val) ? 1 : 0); break;
+        res = (left_val != right_val) ? 1 : 0; break;
     case Op::L:
-        interp.eval_stack.PushValue((left_val < right_val) ? 1 : 0); break;
+        res = (left_val < right_val) ? 1 : 0; break;
     case Op::G:
-        interp.eval_stack.PushValue((left_val > right_val) ? 1 : 0); break;
+        res = (left_val > right_val) ? 1 : 0; break;
     case Op::LE:
-        interp.eval_stack.PushValue((left_val <= right_val) ? 1 : 0); break;
+        res = (left_val <= right_val) ? 1 : 0; break;
     case Op::GE:
-        interp.eval_stack.PushValue((left_val >= right_val) ? 1 : 0); break;
+        res = (left_val >= right_val) ? 1 : 0; break;
     case Op::ADD:
-        interp.eval_stack.PushValue(left_val + right_val); break;
+        res = left_val + right_val; break;
     case Op::SUB:
-        interp.eval_stack.PushValue(left_val - right_val); break;
+        res = left_val - right_val; break;
     case Op::MUL:
-        interp.eval_stack.PushValue(left_val * right_val); break;
+        res = left_val * right_val; break;
     case Op::DIV:
         if (right_val == 0)
             throw std::runtime_error("Division by zero!");
-        interp.eval_stack.PushValue(left_val / right_val); break;
+        res = left_val / right_val; break;
     default:
         throw std::runtime_error("Unknown binary operator");
     }
+
+    interp.eval_stack.PushValue(res);
 }
 
 void language::Assignment::evaluate(Interpreter& interp)
