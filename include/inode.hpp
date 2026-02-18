@@ -1,6 +1,8 @@
 #ifndef INODE_HPP
 #define INODE_HPP
 
+#include "fwd.hpp"
+
 namespace language
 {
 class Interpreter;

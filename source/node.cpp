@@ -4,8 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "interpreter.hpp"
 #include "node.hpp"
-#include "interpritator.hpp"
 
 void language::Number::evaluate(Interpreter& interp)
 {
@@ -19,14 +19,20 @@ void language::Variable::evaluate(Interpreter& interp)
 
 void language::Declaration::evaluate(Interpreter& interp)
 {
-    expr_->evaluate(interp);
-    interp.scope_stack.AddVariable(name_, interp.eval_stack.PopValue());
+    int value = 0;
+    if (expr_)
+    {
+        expr_->evaluate(interp);
+        value = interp.eval_stack.PopValue();
+    }
+
+    interp.scope_stack.AddVariable(name_, value);
 }
 
 void language::BinaryOp::evaluate(Interpreter& interp)
 {
-    left_expr_->evaluate(interp);
-    right_expr_->evaluate(interp);
+    left_->evaluate(interp);
+    right_->evaluate(interp);
 
     int right_val = interp.eval_stack.PopValue();
     int left_val = interp.eval_stack.PopValue();
@@ -36,31 +42,43 @@ void language::BinaryOp::evaluate(Interpreter& interp)
     switch (op_)
     {
     case Op::OR:
-        res = (left_val != 0) || (right_val != 0) ? 1 : 0; break;
+        res = (left_val != 0) || (right_val != 0) ? 1 : 0;
+        break;
     case Op::AND:
-        res = (left_val != 0) && (right_val != 0) ? 1 : 0; break;
+        res = (left_val != 0) && (right_val != 0) ? 1 : 0;
+        break;
     case Op::EQ:
-        res = (left_val == right_val) ? 1 : 0; break;
+        res = (left_val == right_val) ? 1 : 0;
+        break;
     case Op::NE:
-        res = (left_val != right_val) ? 1 : 0; break;
+        res = (left_val != right_val) ? 1 : 0;
+        break;
     case Op::L:
-        res = (left_val < right_val) ? 1 : 0; break;
+        res = (left_val < right_val) ? 1 : 0;
+        break;
     case Op::G:
-        res = (left_val > right_val) ? 1 : 0; break;
+        res = (left_val > right_val) ? 1 : 0;
+        break;
     case Op::LE:
-        res = (left_val <= right_val) ? 1 : 0; break;
+        res = (left_val <= right_val) ? 1 : 0;
+        break;
     case Op::GE:
-        res = (left_val >= right_val) ? 1 : 0; break;
+        res = (left_val >= right_val) ? 1 : 0;
+        break;
     case Op::ADD:
-        res = left_val + right_val; break;
+        res = left_val + right_val;
+        break;
     case Op::SUB:
-        res = left_val - right_val; break;
+        res = left_val - right_val;
+        break;
     case Op::MUL:
-        res = left_val * right_val; break;
+        res = left_val * right_val;
+        break;
     case Op::DIV:
         if (right_val == 0)
             throw std::runtime_error("Division by zero!");
-        res = left_val / right_val; break;
+        res = left_val / right_val;
+        break;
     default:
         throw std::runtime_error("Unknown binary operator");
     }
@@ -68,10 +86,30 @@ void language::BinaryOp::evaluate(Interpreter& interp)
     interp.eval_stack.PushValue(res);
 }
 
+void language::UnaryOp::evaluate(Interpreter& interp)
+{
+    expr_->evaluate(interp);
+
+    int val = interp.eval_stack.PopValue();
+
+    switch (op_)
+    {
+    case Op::MINUS:
+        interp.eval_stack.PushValue(-val);
+        break;
+    case Op::NOT:
+        interp.eval_stack.PushValue((val == 0) ? 1 : 0);
+        break;
+    default:
+        throw std::runtime_error("Unknown unary operator");
+    }
+}
+
 void language::Assignment::evaluate(Interpreter& interp)
 {
     expr_->evaluate(interp);
-    interp.scope_stack.WriteNewValueVar(name_, interp.eval_stack.PopValue());
+    interp.scope_stack.WriteNewValueVar(var_name_,
+                                        interp.eval_stack.PopValue());
 }
 
 void language::PrintStmt::evaluate(Interpreter& interp)
@@ -96,7 +134,8 @@ void language::IfStmt::evaluate(Interpreter& interp)
         body_else_->evaluate(interp);
 }
 
-void language::WhileStmt::evaluate(Interpreter& interp)
+void language::WhileStmt::evaluate(
+    Interpreter& interp) // TODO проблема с логикой
 {
     while (interp.eval_stack.PopValue())
     {
@@ -113,4 +152,9 @@ void language::BlockStmt::evaluate(Interpreter& interp)
         statements_[i]->evaluate(interp);
     }
     interp.scope_stack.DeleteScope();
+}
+
+void language::Interpreter::Run(BlockStmt& root)
+{
+    root.evaluate(*this);
 }

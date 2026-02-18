@@ -1,140 +1,171 @@
-%{
-#include <iostream>
-#include "driver.hpp"
+%language "c++"
+%defines
+%define api.value.type union
+%define api.parser.class {parser}
+%define parse.error detailed
+%locations
 
-extern int yylineno;
-extern int yylex(void);
-
-void yyerror(language::Driver* driver, const char* msg)
-{
-    (void)driver;
-    std::cerr << "Parser ERROR at line " << yylineno << ": " << msg << std::endl;
-}
-%}
+%param { language::AST* ast }
 
 %code requires {
-namespace language {
-    class Driver;
-}
-#include "node.hpp"
-}
-
-%union {
-    int number;
-    std::string* string;
-    language::IExpression* expr;
-    language::IStatement* stmt;
+    #include <string>
+    #include <memory>
+    #include "ast.hpp"
+    #include "node.hpp"
 }
 
-%parse-param { language::Driver* driver }
+%code {
+    #include <iostream>
+    #include "parser.tab.hpp"
 
-%destructor { delete $$; } <expr>
-%destructor { delete $$; } <stmt>
-%destructor { delete $$; } <string>
+    int yylex(yy::parser::semantic_type* yylval,
+              yy::parser::location_type* yylloc,
+              language::AST* ast);
+}
 
-%token <number> NUMBER
-%token <string> VAR
-%token WHILE IF PRINT SCANF ELSE // FIXME 
+%token INT WHILE IF PRINT SCANF ELSE
 %token EQ NE LE GE L G AND OR NOT
+%token PLUS MINUS MUL DIV
+%token UMINUS
 
-%type <expr> expr
-%type <stmt> stmt
-%type <stmt> stmt_list
-%type <stmt> opt_else
+%token <int> NUMBER
+%token <std::string*> VAR
+
+%type <language::IExpression*> expr
+%type <language::IStatement*> stmt
+%type <language::BlockStmt*> stmt_list
+%type <language::IStatement*> opt_else
 
 %nonassoc XIF
 %nonassoc ELSE
+%right NOT UMINUS
 %left OR
 %left AND
 %left EQ NE
 %left LE GE L G
-%left '+' '-' // FIXME 
-%left '*' '/'
-%right NOT
+%left PLUS MINUS
+%left MUL DIV
 
 %%
 
 program: stmt_list {
-    driver->set_root(static_cast<language::BlockStmt*>($1));
-    std::cout << " Parsing completed successfully\n";
+    ast->set_root($1);
+    std::cout << "✓ Parsing completed successfully\n";
 }
 ;
 
-stmt_list: 
-    %empty { 
-        $$ = new language::BlockStmt(); 
+stmt_list:
+    %empty {
+        $$ = ast->create_block();
     }
     | stmt_list stmt {
-        language::BlockStmt* block = static_cast<language::BlockStmt*>($1);
-        block->add_statement(std::unique_ptr<language::IStatement>($2));
-        $$ = block;
+        $1->add_statement($2);
+        $$ = $1;
     }
 ;
 
-stmt: VAR '=' expr ';' {
-    $$ = new language::Assignment(*$1, std::unique_ptr<language::IExpression>($3));
-    delete $1;
-}
+stmt:
+    INT VAR '=' expr ';' {
+        std::string name = *$2;
+
+        $$ = ast->create_declaration(name, $4);
+    }
+    | INT VAR ';' {
+        std::string name = *$2;
+
+        $$ = ast->create_declaration(name, nullptr);
+    }
+    | VAR '=' expr ';' {
+        std::string name = *$1;
+
+        $$ = ast->create_assignment(name, $3);
+    }
     | PRINT '(' expr ')' ';' {
-    $$ = new language::PrintStmt(std::unique_ptr<language::IExpression>($3));
-}
+        $$ = ast->create_print($3);
+    }
     | WHILE '(' expr ')' stmt {
-
-    language::BlockStmt* body_block = dynamic_cast<language::BlockStmt*>($5);
-    if (!body_block) {
-        body_block = new language::BlockStmt();
-        body_block->add_statement(std::unique_ptr<language::IStatement>($5));
+        auto body_block = ast->create_block();
+        body_block->add_statement($5);
+        $$ = ast->create_while($3, body_block);
     }
-    $$ = new language::WhileStmt(
-        std::unique_ptr<language::IExpression>($3),
-        std::unique_ptr<language::IStatement>(body_block)
-    );
-}
     | IF '(' expr ')' stmt opt_else {
-
-    language::BlockStmt* then_block = dynamic_cast<language::BlockStmt*>($5);
-    if (!then_block) {
-        then_block = new language::BlockStmt();
-        then_block->add_statement(std::unique_ptr<language::IStatement>($5));
+        auto then_block = ast->create_block();
+        then_block->add_statement($5);
+        $$ = ast->create_if($3, then_block, $6);
     }
-
-    language::BlockStmt* else_block = nullptr;
-    if ($6) {
-        else_block = dynamic_cast<language::BlockStmt*>($6);
-        if (!else_block) {
-            else_block = new language::BlockStmt();
-            else_block->add_statement(std::unique_ptr<language::IStatement>($6));
-        }
+    | '{' stmt_list '}' {
+        $$ = $2;
     }
-    $$ = new language::IfStmt(
-        std::unique_ptr<language::IExpression>($3),
-        std::unique_ptr<language::IStatement>(then_block),
-        else_block ? std::unique_ptr<language::IStatement>(else_block) : nullptr
-    );
-}
-    | '{' stmt_list '}' { $$ = $2; }
 ;
 
-opt_else: ELSE stmt { $$ = $2; }
-        | %prec XIF %empty { $$ = nullptr; }
+opt_else:
+    ELSE stmt { $$ = $2; }
+    | %prec XIF %empty { $$ = nullptr; }
 ;
 
-expr: expr OR expr   { $$ = driver->create_binary_op(language::BinaryOp::Op::OR,  $1, $3); }
-    | expr AND expr  { $$ = driver->create_binary_op(language::BinaryOp::Op::AND, $1, $3); }
-    | expr EQ expr   { $$ = driver->create_binary_op(language::BinaryOp::Op::EQ,  $1, $3); }
-    | expr NE expr   { $$ = driver->create_binary_op(language::BinaryOp::Op::NE,  $1, $3); }
-    | expr L expr    { $$ = driver->create_binary_op(language::BinaryOp::Op::L,   $1, $3); }
-    | expr G expr    { $$ = driver->create_binary_op(language::BinaryOp::Op::G,   $1, $3); }
-    | expr LE expr   { $$ = driver->create_binary_op(language::BinaryOp::Op::LE,  $1, $3); }
-    | expr GE expr   { $$ = driver->create_binary_op(language::BinaryOp::Op::GE,  $1, $3); }
-    | expr '+' expr  { $$ = driver->create_binary_op(language::BinaryOp::Op::ADD, $1, $3); }
-    | expr '-' expr  { $$ = driver->create_binary_op(language::BinaryOp::Op::SUB, $1, $3); }
-    | expr '*' expr  { $$ = driver->create_binary_op(language::BinaryOp::Op::MUL, $1, $3); }
-    | expr '/' expr  { $$ = driver->create_binary_op(language::BinaryOp::Op::DIV, $1, $3); }
-    | '(' expr ')'   { $$ = $2; }
-    | NUMBER         { $$ = driver->create_number($1); }
-    | VAR            { $$ = driver->create_variable($1); delete $1; }
-    | SCANF          { $$ = driver->create_scanf(); }
+expr:
+    MINUS expr %prec UMINUS {
+        $$ = ast->create_unary(language::UnaryOp::Op::MINUS, $2);
+    }
+    | NOT expr {
+        $$ = ast->create_unary(language::UnaryOp::Op::NOT, $2);
+    }
+    | expr OR expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::OR, $1, $3);
+    }
+    | expr AND expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::AND, $1, $3);
+    }
+    | expr EQ expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::EQ, $1, $3);
+    }
+    | expr NE expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::NE, $1, $3);
+    }
+    | expr L expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::L, $1, $3);
+    }
+    | expr G expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::G, $1, $3);
+    }
+    | expr LE expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::LE, $1, $3);
+    }
+    | expr GE expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::GE, $1, $3);
+    }
+    | expr PLUS expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::ADD, $1, $3);
+    }
+    | expr MINUS expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::SUB, $1, $3);
+    }
+    | expr MUL expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::MUL, $1, $3);
+    }
+    | expr DIV expr {
+        $$ = ast->create_binary_op(language::BinaryOp::Op::DIV, $1, $3);
+    }
+    | '(' expr ')' {
+        $$ = $2;
+    }
+    | NUMBER {
+        $$ = ast->create_number($1);
+    }
+    | VAR {
+        std::string name = *$1;
+        $$ = ast->create_variable(name);
+    }
+    | SCANF {
+        $$ = ast->create_scanf();
+    }
 ;
 
 %%
+
+namespace yy {
+    void parser::error(const location_type& loc, const std::string& msg) {
+        std::cerr << "Parser ERROR at line " << loc.begin.line
+                  << ": " << msg << std::endl;
+    }
+}
