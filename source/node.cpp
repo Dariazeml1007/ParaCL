@@ -134,15 +134,20 @@ void language::IfStmt::evaluate(Interpreter& interp)
         body_else_->evaluate(interp);
 }
 
-void language::WhileStmt::evaluate(
-    Interpreter& interp) // TODO проблема с логикой
+void language::WhileStmt::evaluate(Interpreter& interp)
 {
-    while (interp.eval_stack.PopValue())
+    while (true)
     {
         condition_->evaluate(interp);
+        const int cond = interp.eval_stack.PopValue();
+
+        if (!cond)
+            break;
+
         body_->evaluate(interp);
     }
 }
+
 
 void language::BlockStmt::evaluate(Interpreter& interp)
 {

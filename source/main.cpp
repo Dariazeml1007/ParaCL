@@ -1,11 +1,11 @@
 #include "ast.hpp"
 #include "interpreter.hpp"
 #include "node.hpp"
-#include "parser.tab.hpp" // ← для yy::parser
+#include "parser.tab.hpp"
+
 #include <iostream>
 #include <string>
 
-// ===== РЕКУРСИВНЫЙ ДАМП ДЕРЕВА =====
 static void dump_node(const language::INode* node, int indent = 0)
 {
     if (!node)
@@ -127,36 +127,27 @@ static void dump_node(const language::INode* node, int indent = 0)
             dump_node(b->get_statement(i), indent + 2);
     }
 }
-#include "ast.hpp"
-#include "interpreter.hpp"
-#include "node.hpp"
-#include "parser.tab.hpp"
-#include <iostream>
-#include <string>
 
 int main()
 {
     language::AST ast;
-
     yy::parser parser(&ast);
 
-    std::cerr << "Enter code (Ctrl+D when done):\n";
-    int result = parser.parse();
-
-    if (result == 0)
+    if (parser.parse() != 0)
     {
+        std::cerr << "Parse error\n";
+        return 0;
+    }
 
-        language::Interpreter interp;
-        interp.scope_stack.AddScope();
+    language::Interpreter interp;
 
-        try
-        {
-
-            ast.get_root()->evaluate(interp);
-        }
-        catch (const std::exception& e)
-        {
-        }
+    try
+    {
+        interp.Run(*ast.get_root());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Runtime error: " << e.what() << "\n";
     }
 
     return 0;

@@ -6,8 +6,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-// FIXME косяк с тем что тут не всегда виден interpreter
+#include <cstddef>
 
 namespace language
 {
@@ -253,9 +252,6 @@ public:
     ~BlockStmt() = default;
 };
 
-public:
-    void evaluate(Interpreter& interp) override;
-};
 } // namespace language
 
 #endif // NODE_HPP

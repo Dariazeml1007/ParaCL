@@ -1,5 +1,5 @@
-#ifndef INTERPRITATOR_HPP
-#define INTERPRITATOR_HPP
+#ifndef INTERPRETER_HPP
+#define INTERPRETER_HPP
 
 #include <stdexcept>
 #include <string>
@@ -7,16 +7,11 @@
 #include <vector>
 
 #include "fwd.hpp"
-
-namespace language
-{
-using ValT = int; // TODO
-
 #include "node.hpp"
 
 namespace language
 {
-    using ValT = int;
+using ValT = int;
 
 class VariableTable
 {
@@ -65,6 +60,7 @@ public:
 
     void DeleteScope()
     {
+        if (stack.empty()) throw std::runtime_error("DeleteScope on empty stack");
         stack.pop_back();
     }
 
@@ -134,9 +130,9 @@ public:
     ScopeStack scope_stack;
     EvaluationStack eval_stack;
 
-    // void Run(language::BlockStmt& root);
     void Run(BlockStmt& root);
 };
+
 } // namespace language
 
-#endif // INTERPRITATOR_HPP
+#endif // INTERPRETER_HPP
