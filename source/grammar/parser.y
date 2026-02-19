@@ -22,7 +22,7 @@
               language::AST* ast);
 }
 
-%token INT WHILE IF PRINT SCANF ELSE
+%token WHILE IF PRINT SCANF ELSE
 %token EQ NE LE GE L G AND OR NOT
 %token PLUS MINUS MUL DIV
 %token UMINUS
@@ -75,16 +75,6 @@ stmt_body:
 ;
 
 stmt:
-    INT VAR '=' expr ';' {
-        std::string name = *$2;
-
-        $$ = ast->create_declaration(name, $4);
-    }
-    | INT VAR ';' {
-        std::string name = *$2;
-
-        $$ = ast->create_declaration(name, nullptr);
-    }
     | VAR '=' expr ';' {
         std::string name = *$1;
 

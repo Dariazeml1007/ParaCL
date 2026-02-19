@@ -20,7 +20,6 @@ extern language::AST* ast_ptr;
     return yy::parser::token::NUMBER;
 }
 
-"int"     { return yy::parser::token::INT;   }
 "while"   { return yy::parser::token::WHILE; }
 "if"      { return yy::parser::token::IF;    }
 "print"   { return yy::parser::token::PRINT; }

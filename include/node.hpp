@@ -129,29 +129,6 @@ public:
     ~Assignment() = default;
 };
 
-class Declaration : public IStatement
-{
-private:
-    std::string name_;
-    IExpression* expr_;
-
-public:
-    Declaration(const std::string& name, IExpression* expr = nullptr)
-        : name_(name), expr_(expr)
-    {
-    }
-    void evaluate(Interpreter& interp) override;
-    const std::string& get_var_name() const
-    {
-        return name_;
-    }
-    IExpression* get_expr() const
-    {
-        return expr_;
-    }
-    ~Declaration() = default;
-};
-
 class PrintStmt : public IStatement
 {
 private:

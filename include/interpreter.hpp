@@ -71,7 +71,7 @@ public:
             throw std::runtime_error("Variable redefinition: " + name_variable);
     }
 
-    void WriteNewValueVar(const std::string& name_variable, int value)
+    void AssignOrDeclareCurrent(const std::string& name_variable, int value)
     {
         for (size_t i = stack.size(); i > 0; --i)
         {
@@ -81,7 +81,10 @@ public:
                 return;
             }
         }
-        throw std::runtime_error("Variable not found: " + name_variable);
+        if (stack.empty())
+            throw std::runtime_error("No scopes available for variable: " + name_variable);
+
+        stack.back().AddNewVariable(name_variable, value);
     }
 
     int GetValueVariable(const std::string& name_variable) const
