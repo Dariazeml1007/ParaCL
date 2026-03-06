@@ -14,13 +14,19 @@
     #include "ast/ast.hpp"
     #include "ast/node.hpp"
 }
-
 %code {
     #include <iostream>
+
+
+    namespace yy {
+        extern int yycolno;
+        extern std::string current_line;
+        extern std::string last_complete_line;
+    }
+
     int yylex(yy::parser::semantic_type* yylval,
               yy::parser::location_type* yylloc,
               language::AST* ast);
-
 }
 
 %debug
@@ -180,10 +186,28 @@ expr:
 ;
 
 %%
+void yy::parser::error(const location_type& loc, const std::string& msg)
+{
+    std::cerr << "Syntax error at line " << loc.begin.line
+              << ", column " << loc.begin.column
+              << ": " << msg << std::endl;
 
-namespace yy {
-    void parser::error(const location_type& loc, const std::string& msg) {
-        std::cerr << "Parser ERROR at line " << loc.begin.line
-                  << ": " << msg << std::endl;
+
+    if (loc.begin.column <= 1 && !yy::last_complete_line.empty()) {
+        std::cerr << "\nPrevious line:" << std::endl;
+        std::cerr << yy::last_complete_line << std::endl;
+
+
+        if (!yy::last_complete_line.empty() &&
+            yy::last_complete_line.back() != ';') {
+            std::cerr << std::string(yy::last_complete_line.length(), ' ') << "^" << std::endl;
+            std::cerr << "Missing ';' here?" << std::endl;
+        }
+    }
+
+    else if (!yy::current_line.empty()) {
+        std::cerr << "\nLine:" << std::endl;
+        std::cerr << yy::current_line << std::endl;
+        std::cerr << std::string(loc.begin.column - 1, ' ') << "^" << std::endl;
     }
 }
