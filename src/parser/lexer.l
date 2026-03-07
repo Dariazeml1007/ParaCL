@@ -5,8 +5,11 @@
 
 %{
 #include "parser.tab.hpp"
+
 #include <string>
-#include <iostream>
+#include <utility>
+
+#include "error/error.hpp"
 
 extern yy::parser::semantic_type* yylval;
 extern yy::parser::location_type* yylloc;
@@ -18,9 +21,17 @@ namespace yy {
     std::string last_complete_line;
 }
 
-#define SET_LOC_BEGIN yylloc->begin.line = yylineno; yylloc->begin.column = yy::yycolno
-#define SET_LOC_END yylloc->end.line = yylineno; yylloc->end.column = yy::yycolno + yyleng - 1
-#define UPDATE_COLUMN yy::yycolno += yyleng; yy::current_line.append(yytext, yyleng)
+#define SET_LOC_BEGIN \
+    yylloc->begin.line = yylineno; \
+    yylloc->begin.column = yy::yycolno
+
+#define SET_LOC_END \
+    yylloc->end.line = yylineno; \
+    yylloc->end.column = yy::yycolno + yyleng - 1
+
+#define UPDATE_COLUMN \
+    yy::yycolno += yyleng; \
+    yy::current_line.append(yytext, yyleng)
 %}
 
 %%
@@ -29,7 +40,26 @@ namespace yy {
     SET_LOC_BEGIN;
     UPDATE_COLUMN;
     SET_LOC_END;
-    yylval->emplace<int>(std::stoi(yytext));
+
+    try
+    {
+        yylval->emplace<int>(std::stoi(yytext));
+    }
+    catch (const std::out_of_range&)
+    {
+        Diagnostic diagnostic;
+        diagnostic.kind = DiagnosticKind::Lexical;
+        diagnostic.message = "integer literal is out of range";
+        diagnostic.range = SourceRange{
+            { yylineno, yy::yycolno - yyleng },
+            { yylineno, yy::yycolno }
+        };
+        diagnostic.line_text = yy::current_line;
+        diagnostic.add_message.push_back("use a smaller integer value");
+
+        throw LexicalError(std::move(diagnostic));
+    }
+
     return yy::parser::token::NUMBER;
 }
 
@@ -43,6 +73,7 @@ namespace yy {
     SET_LOC_BEGIN;
     UPDATE_COLUMN;
     SET_LOC_END;
+
     yylval->emplace<std::string*>(ast_ptr->make_string(yytext));
     return yy::parser::token::VAR;
 }
@@ -52,66 +83,79 @@ namespace yy {
     UPDATE_COLUMN;
     SET_LOC_END;
 }
+
 "\r\n" {
     SET_LOC_BEGIN;
+    SET_LOC_END;
+
     yy::last_complete_line = yy::current_line;
     yy::current_line.clear();
     yy::yycolno = 1;
-    SET_LOC_END;
 }
 
 "\n" {
     SET_LOC_BEGIN;
+    SET_LOC_END;
+
     yy::last_complete_line = yy::current_line;
     yy::current_line.clear();
     yy::yycolno = 1;
-    SET_LOC_END;
 }
 
 "\r" {
     SET_LOC_BEGIN;
+    SET_LOC_END;
+
     yy::last_complete_line = yy::current_line;
     yy::current_line.clear();
     yy::yycolno = 1;
-    SET_LOC_END;
 }
-"//"[^\n]* {
+
+"//"[^\n\r]* {
     SET_LOC_BEGIN;
     UPDATE_COLUMN;
     SET_LOC_END;
 }
 
-"+"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::PLUS;  }
-"-"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::MINUS; }
-"*"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::MUL;   }
-"/"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::DIV;   }
-"%"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::MOD;   }
+"==" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::EQ;     }
+"!=" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::NE;     }
+"<=" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::LE;     }
+">=" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::GE;     }
+"&&" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::AND;    }
+"||" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::OR;     }
 
-"==" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::EQ;    }
-"!=" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::NE;    }
-"<=" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::LE;    }
-">=" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::GE;    }
-"<"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::L;     }
-">"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::G;     }
-
-"&&" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::AND;   }
-"||" { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::OR;    }
-"!"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::NOT;   }
+"+"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::PLUS;   }
+"-"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::MINUS;  }
+"*"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::MUL;    }
+"/"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::DIV;    }
+"%"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::MOD;    }
+"<"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::L;      }
+">"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::G;      }
+"!"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::NOT;    }
+"="  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::EQUALS; }
 
 "("  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return '('; }
 ")"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return ')'; }
 "{"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return '{'; }
 "}"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return '}'; }
-"="  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return yy::parser::token::EQUALS; }
 ";"  { SET_LOC_BEGIN; UPDATE_COLUMN; SET_LOC_END; return ';'; }
 
 . {
     SET_LOC_BEGIN;
     UPDATE_COLUMN;
     SET_LOC_END;
-    std::cerr << "Lexer error: unexpected character '" << yytext[0]
-              << "' at line " << yylineno << ", column " << yy::yycolno - 1 << std::endl;
-    return yytext[0];
+
+    Diagnostic diagnostic;
+    diagnostic.kind = DiagnosticKind::Lexical;
+    diagnostic.message = std::string("unexpected character '") + yytext[0] + "'";
+    diagnostic.range = SourceRange{
+        { yylineno, yy::yycolno - 1 },
+        { yylineno, yy::yycolno }
+    };
+    diagnostic.line_text = yy::current_line;
+    diagnostic.add_message.push_back("remove this character or replace it with a valid token");
+
+    throw LexicalError(std::move(diagnostic));
 }
 
 %%
@@ -122,7 +166,8 @@ language::AST* ast_ptr = nullptr;
 
 int yylex(yy::parser::semantic_type* yylval_param,
           yy::parser::location_type* yylloc_param,
-          language::AST* ast_param) {
+          language::AST* ast_param)
+{
     yylval = yylval_param;
     yylloc = yylloc_param;
     ast_ptr = ast_param;
