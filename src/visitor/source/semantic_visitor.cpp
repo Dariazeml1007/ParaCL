@@ -192,6 +192,8 @@ bool SemanticVisitor::isDeclared(const std::string& name) const
     }
     return false;
 }
+// semantic_visitor.cpp
+
 void SemanticVisitor::addError(const std::string& message,
                                const language::INode* node)
 {
@@ -202,6 +204,16 @@ void SemanticVisitor::addError(const std::string& message,
     if (node)
     {
         diagnostic.range = node->range();
+
+        if (!source_lines_.empty() && diagnostic.range.has_value())
+        {
+            int line_idx = diagnostic.range->begin.line - 1;
+            if (line_idx >= 0 &&
+                line_idx < static_cast<int>(source_lines_.size()))
+            {
+                diagnostic.line_text = source_lines_[line_idx];
+            }
+        }
     }
 
     errors_.emplace_back(std::move(diagnostic));

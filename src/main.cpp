@@ -1,11 +1,13 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "ast/ast.hpp"
 #include "ast/node.hpp"
 #include "error/error.hpp"
 #include "error/error_print.hpp"
+#include "error/hint_generator.hpp"
 #include "interpreter/interpreter.hpp"
 #include "parser.tab.hpp"
 #include "visitor/semantic_visitor.hpp"
@@ -20,11 +22,20 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    std::vector<std::string> source_lines;
+    std::ifstream file(argv[1]);
+    std::string line;
+    while (std::getline(file, line))
+    {
+        source_lines.push_back(line);
+    }
+    file.close();
+
     yyin = std::fopen(argv[1], "r");
     if (!yyin)
     {
         std::cerr << "Failed to open file: " << argv[1] << '\n';
-        return 0;
+        return 1;
     }
 
     try
@@ -35,13 +46,16 @@ int main(int argc, char** argv)
         if (parser.parse() != 0)
         {
             std::fclose(yyin);
-            return 0;
+            return 1;
         }
 
         std::fclose(yyin);
         yyin = nullptr;
 
         SemanticVisitor visitor;
+
+        visitor.SetSourceLines(source_lines);
+
         if (ast.get_root())
         {
             visitor.analyze(ast.get_root());
@@ -51,7 +65,11 @@ int main(int argc, char** argv)
             {
                 for (const auto& error : errors)
                 {
-                    PrintDiagnostic(error.diagnostic(), argv[1]);
+                    Diagnostic diag = error.diagnostic();
+
+                    HintGenerator::Enhance(diag, source_lines);
+
+                    PrintDiagnostic(diag, argv[1]);
                 }
                 return 1;
             }
@@ -69,8 +87,12 @@ int main(int argc, char** argv)
             yyin = nullptr;
         }
 
-        PrintDiagnostic(e.diagnostic(), argv[1]);
-        return 0;
+        Diagnostic diag = e.diagnostic();
+
+        HintGenerator::Enhance(diag, source_lines);
+
+        PrintDiagnostic(diag, argv[1]);
+        return 1;
     }
     catch (const std::exception& e)
     {
@@ -83,7 +105,10 @@ int main(int argc, char** argv)
         Diagnostic diagnostic;
         diagnostic.kind = DiagnosticKind::Internal;
         diagnostic.message = e.what();
+
+        HintGenerator::Enhance(diagnostic, source_lines);
+
         PrintDiagnostic(diagnostic, argv[1]);
-        return 0;
+        return 1;
     }
 }

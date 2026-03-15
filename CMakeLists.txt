@@ -21,6 +21,7 @@ target_link_libraries(ParaCL
         pcl_interpreter
         pcl_parser
         pcl_visitor
+        pcl_error
 
 )
 

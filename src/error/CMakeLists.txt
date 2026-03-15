@@ -3,6 +3,7 @@ add_library(pcl_error STATIC)
 target_sources(pcl_error
     PRIVATE
         source/error_print.cpp
+        source/hint_generator.cpp
 )
 
 target_include_directories(pcl_error

@@ -71,10 +71,12 @@ public:
 
         stack.pop_back();
     }
+
     bool IsEmpty() const
     {
         return stack.empty();
     }
+
     void AddVariable(const std::string& name_variable, int value)
     {
         VariableTable& top = stack.back();

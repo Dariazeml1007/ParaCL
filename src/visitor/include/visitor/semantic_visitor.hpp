@@ -35,12 +35,17 @@ public:
     {
         errors_.clear();
     }
+    void SetSourceLines(const std::vector<std::string>& lines)
+    {
+        source_lines_ = lines;
+    }
+
     void analyze(language::BlockStmt* root);
 
 private:
     std::stack<std::unordered_set<std::string>> scopes_;
     std::vector<SemanticError> errors_;
-
+    std::vector<std::string> source_lines_;
     bool isDeclared(const std::string& name) const;
     void addError(const std::string& message, const language::INode* node);
 };
