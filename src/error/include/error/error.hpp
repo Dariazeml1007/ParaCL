@@ -1,5 +1,4 @@
-#ifndef ERROR_HPP
-#define ERROR_HPP
+#pragma once
 
 #include <optional>
 #include <string>
@@ -96,5 +95,3 @@ public:
     {
     }
 };
-
-#endif // ERROR_HPP

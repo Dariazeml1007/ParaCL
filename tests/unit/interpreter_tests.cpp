@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <stdio.h>
+#include <sstream>
 #include <string>
 
 #include "ast/ast.hpp"
@@ -120,18 +121,14 @@ protected:
         fclose(code_file);
         yyin = saved_yyin;
 
-        FILE* input_file = fmemopen((void*)input.c_str(), input.size(), "r");
-        if (!input_file)
-        {
-            throw std::runtime_error("Failed to open memory stream for input");
-        }
+        std::istringstream input_stream(input);
 
         testing::internal::CaptureStdout();
         bool output_captured = true;
 
         try
         {
-            language::Interpreter interp(input_file);
+            language::Interpreter interp(input_stream);
             interp.Run(*ast.get_root());
         }
         catch (...)
@@ -141,11 +138,8 @@ protected:
                 testing::internal::GetCapturedStdout();
                 output_captured = false;
             }
-            fclose(input_file);
             throw;
         }
-
-        fclose(input_file);
 
         if (output_captured)
         {

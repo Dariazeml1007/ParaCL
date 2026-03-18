@@ -45,16 +45,13 @@ void HintGenerator::CheckPreviousLineForSemicolon(
     if (prev_idx < 0 || prev_idx >= static_cast<int>(source_lines.size()))
         return;
 
-    const std::string& prev = source_lines[prev_idx];
+    std::string_view prev = source_lines[prev_idx];
 
-    std::string trimmed = prev;
-    size_t end = trimmed.find_last_not_of(" \t\r\n");
-    if (end != std::string::npos)
-        trimmed = trimmed.substr(0, end + 1);
-
-    if (trimmed.empty())
+    size_t end = prev.find_last_not_of(" \t\r\n");
+    if (end == std::string_view::npos)
         return;
 
+    std::string_view trimmed = prev.substr(0, end + 1);
     char last = trimmed.back();
     if (last != ';' && last != '{' && last != '}')
     {
@@ -68,19 +65,19 @@ void HintGenerator::AddSyntaxHints(Diagnostic& d,
 {
     (void)source_lines;
 
-    const std::string& msg = d.message;
+    std::string_view msg = d.message;
 
-    if (msg.find("expecting '('") != std::string::npos)
+    if (msg.find("expecting '('") != std::string_view::npos)
     {
-        if (msg.find("WHILE") != std::string::npos)
+        if (msg.find("WHILE") != std::string_view::npos)
             d.add_message.push_back(
                 "while condition must be in parentheses: while (expr) { }");
-        else if (msg.find("IF") != std::string::npos)
+        else if (msg.find("IF") != std::string_view::npos)
             d.add_message.push_back(
                 "if condition must be in parentheses: if (expr) { }");
     }
 
-    if (msg.find("unexpected '}'") != std::string::npos)
+    if (msg.find("unexpected '}'") != std::string_view::npos)
         d.add_message.push_back("check for unmatched opening brace '{'");
 }
 

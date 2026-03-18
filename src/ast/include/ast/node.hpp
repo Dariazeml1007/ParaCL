@@ -1,5 +1,4 @@
-#ifndef NODE_HPP
-#define NODE_HPP
+#pragma once
 
 #include "fwd.hpp"
 #include "inode.hpp"
@@ -8,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <string_view>
 
 namespace language
 {
@@ -27,8 +27,6 @@ public:
         return value_;
     }
     void accept(ASTVisitor* visitor) override;
-
-    ~Number() = default;
 };
 
 class Variable : public IExpression
@@ -37,7 +35,7 @@ private:
     std::string name_;
 
 public:
-    Variable(const std::string& name) : name_(name)
+    Variable(std::string_view name) : name_(name)
     {
     }
     void evaluate(Interpreter& interp) override;
@@ -46,7 +44,6 @@ public:
         return name_;
     }
     void accept(ASTVisitor* visitor) override;
-    ~Variable() = default;
 };
 
 class BinaryOp : public IExpression
@@ -93,7 +90,6 @@ public:
         return right_;
     }
     void accept(ASTVisitor* visitor) override;
-    ~BinaryOp() = default;
 };
 
 class UnaryOp : public IExpression
@@ -123,7 +119,6 @@ public:
         return expr_;
     }
     void accept(ASTVisitor* visitor) override;
-    ~UnaryOp() = default;
 };
 
 class Assignment : public IExpression
@@ -133,7 +128,7 @@ private:
     IExpression* expr_;
 
 public:
-    Assignment(const std::string& var_name, IExpression* expr)
+    Assignment(std::string_view var_name, IExpression* expr)
         : var_name_(var_name), expr_(expr)
     {
     }
@@ -147,7 +142,6 @@ public:
         return expr_;
     }
     void accept(ASTVisitor* visitor) override;
-    ~Assignment() = default;
 };
 class ExpressionStmt : public IStatement
 {
@@ -166,7 +160,6 @@ public:
         return expr_;
     }
     void accept(ASTVisitor* visitor) override;
-    ~ExpressionStmt() = default;
 };
 
 class PrintStmt : public IStatement
@@ -184,7 +177,6 @@ public:
         return expr_;
     }
     void accept(ASTVisitor* visitor) override;
-    ~PrintStmt() = default;
 };
 
 class ScanfExpr : public IExpression
@@ -193,7 +185,6 @@ public:
     ScanfExpr() = default;
     void evaluate(Interpreter& interp) override;
     void accept(ASTVisitor* visitor) override;
-    ~ScanfExpr() = default;
 };
 
 class IfStmt : public IStatement
@@ -223,7 +214,6 @@ public:
         return body_else_;
     }
     void accept(ASTVisitor* visitor) override;
-    ~IfStmt() = default;
 };
 
 class WhileStmt : public IStatement
@@ -247,7 +237,6 @@ public:
         return body_;
     }
     void accept(ASTVisitor* visitor) override;
-    ~WhileStmt() = default;
 };
 
 class BlockStmt : public IStatement
@@ -271,9 +260,6 @@ public:
         return statements_[i];
     }
     void accept(ASTVisitor* visitor) override;
-    ~BlockStmt() = default;
 };
 
 } // namespace language
-
-#endif // NODE_HPP

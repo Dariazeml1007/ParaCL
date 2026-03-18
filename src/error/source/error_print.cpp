@@ -85,7 +85,7 @@ void PrintDiagnostic(const Diagnostic& diagnostic, const std::string& filename)
         }
     }
 
-    for (const std::string& add_message : diagnostic.add_message)
+    for (std::string_view add_message : diagnostic.add_message)
     {
         std::cout << "  = " << add_message << '\n';
     }
