@@ -192,7 +192,6 @@ bool SemanticVisitor::isDeclared(const std::string& name) const
     }
     return false;
 }
-// semantic_visitor.cpp
 
 void SemanticVisitor::addError(const std::string& message,
                                const language::INode* node)

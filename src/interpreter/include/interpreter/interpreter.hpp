@@ -1,10 +1,10 @@
-#ifndef INTERPRETER_HPP
-#define INTERPRETER_HPP
+#pragma once
 
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <istream>
 
 #include "ast/fwd.hpp"
 #include "ast/node.hpp"
@@ -23,7 +23,7 @@ private:
 public:
     bool IsVariableExist(const std::string& name_variable) const
     {
-        return variables.find(name_variable) != variables.end();
+        return variables.contains(name_variable);
     }
 
     bool AddNewVariable(const std::string& name_variable, int value)
@@ -163,16 +163,16 @@ public:
 class Interpreter
 {
 private:
-    FILE* input_stream_;
+    std::istream* input_stream_;
 
 public:
-    Interpreter(FILE* input = stdin) : input_stream_(input)
+    Interpreter(std::istream& input = std::cin) : input_stream_(&input)
     {
     }
 
-    FILE* getInputStream() const
+    std::istream& getInputStream() const
     {
-        return input_stream_;
+        return *input_stream_;
     }
 
     ScopeStack scope_stack;
@@ -181,5 +181,3 @@ public:
     void Run(BlockStmt& root);
 };
 } // namespace language
-
-#endif // INTERPRETER_HPP

@@ -1,5 +1,4 @@
-#ifndef SEMANTIC_VISITOR_HPP
-#define SEMANTIC_VISITOR_HPP
+#pragma once
 
 #include "error/error.hpp"
 #include "visitor/ast_visitor.hpp"
@@ -49,5 +48,3 @@ private:
     bool isDeclared(const std::string& name) const;
     void addError(const std::string& message, const language::INode* node);
 };
-
-#endif

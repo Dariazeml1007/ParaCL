@@ -20,10 +20,6 @@ void language::Variable::evaluate(Interpreter& interp)
     {
         interp.eval_stack.PushValue(interp.scope_stack.GetValueVariable(name_));
     }
-    catch (const RuntimeDiagError&)
-    {
-        throw;
-    }
     catch (const std::exception&)
     {
         Diagnostic diagnostic;
@@ -48,28 +44,28 @@ void language::BinaryOp::evaluate(Interpreter& interp)
     switch (op_)
     {
     case Op::OR:
-        res = (left_val != 0) || (right_val != 0) ? 1 : 0;
+        res = (left_val != 0) || (right_val != 0);
         break;
     case Op::AND:
-        res = (left_val != 0) && (right_val != 0) ? 1 : 0;
+        res = (left_val != 0) && (right_val != 0);
         break;
     case Op::EQ:
-        res = (left_val == right_val) ? 1 : 0;
+        res = (left_val == right_val);
         break;
     case Op::NE:
-        res = (left_val != right_val) ? 1 : 0;
+        res = (left_val != right_val);
         break;
     case Op::L:
-        res = (left_val < right_val) ? 1 : 0;
+        res = (left_val < right_val);
         break;
     case Op::G:
-        res = (left_val > right_val) ? 1 : 0;
+        res = (left_val > right_val);
         break;
     case Op::LE:
-        res = (left_val <= right_val) ? 1 : 0;
+        res = (left_val <= right_val);
         break;
     case Op::GE:
-        res = (left_val >= right_val) ? 1 : 0;
+        res = (left_val >= right_val);
         break;
     case Op::ADD:
         res = left_val + right_val;
@@ -169,7 +165,7 @@ void language::ScanfExpr::evaluate(Interpreter& interp)
 {
     int value = 0;
 
-    if (fscanf(interp.getInputStream(), "%d", &value) != 1)
+    if (!(interp.getInputStream() >> value))
     {
         Diagnostic diagnostic;
         diagnostic.kind = DiagnosticKind::Runtime;

@@ -1,6 +1,4 @@
-
-#ifndef VISITOR_FWD_HPP
-#define VISITOR_FWD_HPP
+#pragma once
 
 namespace language
 {
@@ -34,5 +32,3 @@ public:
     virtual void visit(language::ScanfExpr* node) = 0;
     virtual void visit(language::ExpressionStmt* node) = 0;
 };
-
-#endif // VISITOR_FWD_HPP

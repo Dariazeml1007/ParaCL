@@ -1,5 +1,4 @@
-#ifndef FWD_HPP
-#define FWD_HPP
+#pragma once
 
 namespace language
 {
@@ -9,5 +8,3 @@ class IExpression;
 class IStatement;
 class AST;
 } // namespace language
-
-#endif // FWD_HPP

@@ -1,5 +1,4 @@
-#ifndef ERROR_PRINT_HPP
-#define ERROR_PRINT_HPP
+#pragma once
 
 #include "error/error.hpp"
 
@@ -7,5 +6,3 @@
 #include <string>
 
 void PrintDiagnostic(const Diagnostic& diagnostic, const std::string& filename);
-
-#endif // ERROR_PRINT_HPP

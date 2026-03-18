@@ -1,10 +1,10 @@
-#ifndef AST_HPP
-#define AST_HPP
+#pragma once
 
 #include "node.hpp"
 #include <memory>
 #include <string>
 #include <vector>
+#include <string_view>
 
 namespace language
 {
@@ -31,7 +31,7 @@ public:
 
     ~AST() = default;
 
-    std::string* make_string(const std::string& s)
+    std::string* make_string(std::string_view s)
     {
         auto ptr = std::make_unique<std::string>(s);
         std::string* raw = ptr.get();
@@ -51,5 +51,3 @@ public:
 };
 
 } // namespace language
-
-#endif // AST_HPP
