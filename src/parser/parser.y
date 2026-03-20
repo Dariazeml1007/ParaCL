@@ -45,22 +45,22 @@
 %token <int> NUMBER
 %token <std::string*> VAR
 
-%type <language::IExpression*> expr
-%type <language::IExpression*> unary_expr
-%type <language::IExpression*> primary_expr
-%type <language::IStatement*> stmt
+%type <language::INode*> expr
+%type <language::INode*> unary_expr
+%type <language::INode*> primary_expr
+%type <language::INode*> stmt
 %type <language::BlockStmt*> stmt_list
 
 %precedence XIF
 %precedence ELSE
-%right EQUALS
+%precedence EQUALS
 %left OR
 %left AND
 %left EQ NE
 %left LE GE L G
 %left PLUS MINUS
 %left MUL DIV MOD
-%right NOT UMINUS
+
 
 %%
 

@@ -1,10 +1,10 @@
 #pragma once
 
+#include <istream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <istream>
 
 #include "ast/fwd.hpp"
 #include "ast/node.hpp"
