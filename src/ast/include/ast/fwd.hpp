@@ -4,7 +4,7 @@ namespace language
 {
 class Interpreter;
 class BlockStmt;
-class IExpression;
-class IStatement;
+class INode;
+class INode;
 class AST;
 } // namespace language

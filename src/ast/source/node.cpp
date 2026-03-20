@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "ast/node.hpp"
+#include "ast/node_base.hpp"
 #include "error/error.hpp"
 #include "interpreter/interpreter.hpp"
 #include "visitor/visitor_fwd.hpp"
@@ -213,59 +214,4 @@ void language::BlockStmt::evaluate(Interpreter& interp)
 void language::Interpreter::Run(BlockStmt& root)
 {
     root.evaluate(*this);
-}
-
-void language::Number::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
-}
-
-void language::Variable::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
-}
-
-void language::BinaryOp::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
-}
-
-void language::UnaryOp::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
-}
-
-void language::Assignment::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
-}
-
-void language::ExpressionStmt::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
-}
-
-void language::PrintStmt::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
-}
-
-void language::ScanfExpr::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
-}
-
-void language::IfStmt::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
-}
-
-void language::WhileStmt::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
-}
-
-void language::BlockStmt::accept(ASTVisitor* visitor)
-{
-    visitor->visit(this);
 }

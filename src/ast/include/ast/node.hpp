@@ -2,17 +2,18 @@
 
 #include "fwd.hpp"
 #include "inode.hpp"
+#include "node_base.hpp"
 
 #include <cstddef>
 #include <memory>
 #include <string>
-#include <vector>
 #include <string_view>
+#include <vector>
 
 namespace language
 {
 
-class Number : public IExpression
+class Number : public NodeBase<Number>
 {
 private:
     int value_;
@@ -26,10 +27,9 @@ public:
     {
         return value_;
     }
-    void accept(ASTVisitor* visitor) override;
 };
 
-class Variable : public IExpression
+class Variable : public NodeBase<Variable>
 {
 private:
     std::string name_;
@@ -43,10 +43,9 @@ public:
     {
         return name_;
     }
-    void accept(ASTVisitor* visitor) override;
 };
 
-class BinaryOp : public IExpression
+class BinaryOp : public NodeBase<BinaryOp>
 {
 public:
     enum class Op
@@ -68,11 +67,11 @@ public:
 
 private:
     Op op_;
-    IExpression* left_;
-    IExpression* right_;
+    INode* left_;
+    INode* right_;
 
 public:
-    BinaryOp(Op op, IExpression* left, IExpression* right)
+    BinaryOp(Op op, INode* left, INode* right)
         : op_(op), left_(left), right_(right)
     {
     }
@@ -81,18 +80,17 @@ public:
     {
         return op_;
     }
-    IExpression* get_left() const
+    INode* get_left() const
     {
         return left_;
     }
-    IExpression* get_right() const
+    INode* get_right() const
     {
         return right_;
     }
-    void accept(ASTVisitor* visitor) override;
 };
 
-class UnaryOp : public IExpression
+class UnaryOp : public NodeBase<UnaryOp>
 {
 public:
     enum class Op
@@ -103,10 +101,10 @@ public:
 
 private:
     Op op_;
-    IExpression* expr_;
+    INode* expr_;
 
 public:
-    UnaryOp(Op op, IExpression* expr) : op_(op), expr_(expr)
+    UnaryOp(Op op, INode* expr) : op_(op), expr_(expr)
     {
     }
     void evaluate(Interpreter& interp) override;
@@ -114,21 +112,20 @@ public:
     {
         return op_;
     }
-    IExpression* get_expr() const
+    INode* get_expr() const
     {
         return expr_;
     }
-    void accept(ASTVisitor* visitor) override;
 };
 
-class Assignment : public IExpression
+class Assignment : public NodeBase<Assignment>
 {
 private:
     std::string var_name_;
-    IExpression* expr_;
+    INode* expr_;
 
 public:
-    Assignment(std::string_view var_name, IExpression* expr)
+    Assignment(std::string_view var_name, INode* expr)
         : var_name_(var_name), expr_(expr)
     {
     }
@@ -137,116 +134,110 @@ public:
     {
         return var_name_;
     }
-    IExpression* get_expr() const
+    INode* get_expr() const
     {
         return expr_;
     }
-    void accept(ASTVisitor* visitor) override;
 };
-class ExpressionStmt : public IStatement
+
+class ExpressionStmt : public NodeBase<ExpressionStmt>
 {
 private:
-    IExpression* expr_;
+    INode* expr_;
 
 public:
-    ExpressionStmt(IExpression* expr) : expr_(expr)
+    ExpressionStmt(INode* expr) : expr_(expr)
     {
     }
 
     void evaluate(Interpreter& interp) override;
 
-    IExpression* get_expr() const
+    INode* get_expr() const
     {
         return expr_;
     }
-    void accept(ASTVisitor* visitor) override;
 };
 
-class PrintStmt : public IStatement
+class PrintStmt : public NodeBase<PrintStmt>
 {
 private:
-    IExpression* expr_;
+    INode* expr_;
 
 public:
-    PrintStmt(IExpression* expr) : expr_(expr)
+    PrintStmt(INode* expr) : expr_(expr)
     {
     }
     void evaluate(Interpreter& interp) override;
-    IExpression* get_expr() const
+    INode* get_expr() const
     {
         return expr_;
     }
-    void accept(ASTVisitor* visitor) override;
 };
 
-class ScanfExpr : public IExpression
+class ScanfExpr : public NodeBase<ScanfExpr>
 {
 public:
     ScanfExpr() = default;
     void evaluate(Interpreter& interp) override;
-    void accept(ASTVisitor* visitor) override;
 };
 
-class IfStmt : public IStatement
+class IfStmt : public NodeBase<IfStmt>
 {
 private:
-    IExpression* condition_;
-    IStatement* body_if_;
-    IStatement* body_else_;
+    INode* condition_;
+    INode* body_if_;
+    INode* body_else_;
 
 public:
-    IfStmt(IExpression* condition, IStatement* body_if,
-           IStatement* body_else = nullptr)
+    IfStmt(INode* condition, INode* body_if, INode* body_else = nullptr)
         : condition_(condition), body_if_(body_if), body_else_(body_else)
     {
     }
     void evaluate(Interpreter& interp) override;
-    IExpression* get_condition() const
+    INode* get_condition() const
     {
         return condition_;
     }
-    IStatement* get_body_if() const
+    INode* get_body_if() const
     {
         return body_if_;
     }
-    IStatement* get_body_else() const
+    INode* get_body_else() const
     {
         return body_else_;
     }
-    void accept(ASTVisitor* visitor) override;
 };
 
-class WhileStmt : public IStatement
+class WhileStmt : public NodeBase<WhileStmt>
 {
 private:
-    IExpression* condition_;
-    IStatement* body_;
+    INode* condition_;
+    INode* body_;
 
 public:
-    WhileStmt(IExpression* condition, IStatement* body)
+    WhileStmt(INode* condition, INode* body)
         : condition_(condition), body_(body)
     {
     }
     void evaluate(Interpreter& interp) override;
-    IExpression* get_condition() const
+    INode* get_condition() const
     {
         return condition_;
     }
-    IStatement* get_body() const
+    INode* get_body() const
     {
         return body_;
     }
-    void accept(ASTVisitor* visitor) override;
 };
 
-class BlockStmt : public IStatement
+class BlockStmt : public NodeBase<BlockStmt>
 {
 private:
-    std::vector<IStatement*> statements_;
+    std::vector<INode*> statements_;
 
 public:
     BlockStmt() = default;
-    void add_statement(IStatement* stmt)
+    void add_statement(INode* stmt)
     {
         statements_.push_back(stmt);
     }
@@ -255,11 +246,10 @@ public:
     {
         return statements_.size();
     }
-    IStatement* get_statement(size_t i) const
+    INode* get_statement(size_t i) const
     {
         return statements_[i];
     }
-    void accept(ASTVisitor* visitor) override;
 };
 
 } // namespace language

@@ -36,11 +36,4 @@ public:
     }
 };
 
-class IExpression : public INode
-{
-};
-
-class IStatement : public INode
-{
-};
 } // namespace language
